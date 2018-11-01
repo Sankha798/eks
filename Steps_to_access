@@ -1,0 +1,70 @@
+Here are the steps you’ll follow in this tutorial:
+
+1.  Generate an AWS Access Key ID and Secret Access Key
+2.  Create an AWS IAM service role
+3.  Generate an AWS key pair for the worker nodes
+4.  Create an AWS VPC
+5.  Create and connect to an Amazon EKS cluster
+6.  Add worker nodes to the Amazon EKS cluster
+7.  Add a storage class to the Amazon EKS cluster
+8.  Install Helm and Tiller
+9.  Deploy the WordPress Helm chart
+10. Log in and start using WordPress
+
+Create And Connect To An Amazon EKS Cluster:
+  Navigate to the Amazon EKS console and log in (if you’re not already logged in).
+  Click the “Create cluster” button.
+  
+  Enter details into the EKS cluster creation form as follows:
+
+  In the “Cluster name” field, enter a descriptive name for the cluster. Note this name as it will be required later. 
+  In the “Role ARN” field, select the IAM service role created in Step 2.
+  In the “VPC” field, select the VPC identifier from Step 4.
+  In the “Subnets” field, select the VPC subnet identifiers from Step 4.
+  In the “Security groups” field, select the security group identifier from Step 4.
+  Click “Create” to create the Amazon EKS cluster.
+
+The next step is to configure kubectl to recognize the new cluster’s control plane. To do this:
+
+Select the new cluster in the Amazon EKS console. From the cluster details page, note the API server endpoint and certificate 
+authority data.
+Create a kubectl configuration file in your ~/.kube directory as ~/.kube/config-eks:
+
+mkdir ~/.kube
+touch ~/.kube/config-eks
+Add the file to the $KUBECONFIG environment variable so that kubectl is able to find it:
+
+export KUBECONFIG=~/.kube/config-eks
+Fill the file with the following contents, replacing the placeholders shown as follows:
+
+Replace the API-SERVER-ENDPOINT placeholder with the API server endpoint obtained from the cluster detail page.
+Replace the CA-DATA placeholder with the certificate authority data obtained from the cluster detail page.
+Replace the CLUSTER-NAME placeholder with the name of the Amazon EKS cluster.
+Replace the PROFILE-NAME placeholder with the name of your AWS credentials profile from the ~/.aws/credentials file (typically, default).
+
+apiVersion: v1 clusters:
+
+cluster: server: API-SERVER-ENDPOINT certificate-authority-data: CA-DATA name: kubernetes contexts:
+context: cluster: kubernetes user: aws name: aws current-context: aws kind: Config preferences: {} users:
+name: aws user: exec: apiVersion: client.authentication.k8s.io/v1alpha1 
+command: heptio-authenticator-aws args: - “token” - “-i” - “CLUSTER-NAME” env: - name: AWS_PROFILE value: “PROFILE-NAME”
+Run the command below to confirm that kubectl is able to communicate with the new cluster’s control plane:
+
+kubectl get svc
+
+You should see output similar to what is shown below:
+
+EKS cluster service status
+
+Step 6: Add Worker Nodes To The Amazon EKS Cluster
+
+Once the control plane of your cluster has been activated, the next step is to add nodes to it. To do this:
+
+Navigate to the AWS CloudFormation console and log in (if you’re not already logged in).
+Click the “Create Stack” button.
+On the “Select Template” page, select the option to “Specify an Amazon S3 template URL” and enter the URL below:
+
+https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/amazon-eks-nodegroup.yaml
+
+Click “Next” to proceed.
+
